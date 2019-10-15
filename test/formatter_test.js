@@ -76,4 +76,22 @@ describe('formatter.js', () => {
       expect(fn(articles, null)).to.exist
     })
   })
+
+  describe('formatHelp()', () => {
+    const fn = formatter.formatHelp
+
+    it('should run without breaking', () => {
+      expect(fn()).to.exist
+    })
+  })
+
+  describe('formatError()', () => {
+    const fn = formatter.formatError
+
+    it('should run without breaking', () => {
+      const error = new Error('test error')
+      
+      expect(fn(error)).to.exist
+    })
+  })
 })

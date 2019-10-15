@@ -47,15 +47,13 @@ app.use(loggers.devLoggerMiddleware)
 app.use(asyncHandler(async(request, response, next) => {
   request.isCurl = (request.headers['user-agent'] || '').includes('curl')
   request.country = parser.parseSubdomain(request.subdomains)
-  try {
-    const locationData = await iplocate(request.headers['x-forwarded-for'])
-    // eslint-disable-next-line require-atomic-updates
+  iplocate(request.headers['x-forwarded-for']).then(location => {
     request.timezone = locationData.time_zone
-  } catch (error) {
-    // eslint-disable-next-line require-atomic-updates
+    next()
+  }).catch(() => {
     request.timezone = moment.tz.guess()
-  }
-  next()
+    next()
+  })
 }))
 
 /**
@@ -79,10 +77,13 @@ const getArticles = async(country, category, q, pageSize, page) => {
   if (!result.articles) {
     return []
   }
-  return Promise.all(result.articles.map(async article => {
-    // eslint-disable-next-line require-atomic-updates
-    article.url = await urlShortener.getShortenedUrl(client, article.url)
-    return article
+  return Promise.all(result.articles.map(article => {
+    return new Promise((resolve, reject) => {
+      urlShortener.getShortenedUrl(client, article.url).then(shortUrl => {
+        article.url = shortUrl
+        resolve(article)
+      }).catch(reject)
+    })
   }))
 }
 
